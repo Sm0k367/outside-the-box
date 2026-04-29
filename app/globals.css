@@ -1,14 +1,63 @@
+/* Future-proof, sleek, modern design system for Outside The Box */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  
+  --background: 10 10 12;
+  --foreground: 240 240 245;
+  --primary: 134 239 172;
+  --primary-foreground: 15 23 42;
+  --muted: 39 39 42;
+  --border: 63 63 70;
+}
+
 body {
-  background: #0a0a0a;
-  color: #e0f2f1;
+  font-family: var(--font-sans);
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-feature-settings: "kern" 1, "tnum" 1;
+}
+
+h1, h2, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
 
 .glass {
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(163, 163, 163, 0.08);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+}
+
+.neon-glow {
+  box-shadow: 0 0 35px -5px rgb(134 239 172);
+}
+
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px -15px rgb(16 185 129 / 0.15);
+}
+
+.terminal {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(134 239 172 / 0.3) transparent;
 }
