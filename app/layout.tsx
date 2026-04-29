@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Outside The Box — Agent Swarm",
-  description: "Super app with 9 fully functional agents that can do anything. Real tools, real Groq models, real capabilities.",
+  title: "Outside The Box — Agent Swarm Super App",
+  description: "9 fully functional agents with real tool use. Reads all .md files. Can do anything you ask. Powered by the best Groq models.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -30,7 +30,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-[#050505] text-white flex flex-col">{children}</body>
+      <body className="min-h-full bg-[#050505] text-white antialiased">{children}</body>
     </html>
   );
 }

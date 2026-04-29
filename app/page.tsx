@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface Agent {
   slug: string;
@@ -22,14 +22,13 @@ const agents: Agent[] = [
 export default function OutsideTheBox() {
   const [prompt, setPrompt] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [terminalLines, setTerminalLines] = useState<string[]>([
+  const [terminalLines, setTerminalLines] = useState([
     '> Swarm Intelligence Platform v1000x initialized',
-    '> All 9 agents loaded with full system prompts from .md files',
-    '> Groq connected with real tool calling enabled',
-    '> Ready for your directive'
+    '> All 9 agents loaded from their real .md files with full prompts',
+    '> Groq connected with real tool calling enabled (read, write, bash, search, skills, image generation, git)',
+    '> The super app is ready. The agents can do anything you ask.'
   ]);
   const [currentResponse, setCurrentResponse] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   const addTerminalLine = (line: string) => {
     setTerminalLines(prev => [...prev, line].slice(-12));
@@ -37,15 +36,14 @@ export default function OutsideTheBox() {
 
   const launchSwarm = async () => {
     if (!prompt.trim() || isThinking) return;
-
+    
     const currentPrompt = prompt;
     setPrompt('');
     setIsThinking(true);
     addTerminalLine(`> ${currentPrompt}`);
+    addTerminalLine('> Swarm Orchestrator analyzing and selecting tools...');
 
     try {
-      addTerminalLine('> Swarm Orchestrator routing to specialized agents...');
-      
       const res = await fetch('/api/swarm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,30 +53,32 @@ export default function OutsideTheBox() {
       const data = await res.json();
 
       if (data.success) {
-        addTerminalLine(`> ${data.agent} completed task using tools`);
+        if (data.toolCalls && data.toolCalls > 0) {
+          addTerminalLine(`> Used ${data.toolCalls} tools during execution`);
+        }
+        addTerminalLine(`> ${data.agent} completed the task with excellence`);
         setCurrentResponse(data.response);
       } else {
         addTerminalLine(`> Error: ${data.error}`);
-        setCurrentResponse(`Error: ${data.error || 'Unknown error'}`);
+        setCurrentResponse(`Error: ${data.error || 'Failed to get response'}`);
       }
     } catch (error) {
-      addTerminalLine('> Connection error - check GROQ_API_KEY');
-      setCurrentResponse('Connection error. Make sure GROQ_API_KEY is configured in your environment.');
+      addTerminalLine('> Connection error - check that GROQ_API_KEY is set');
+      setCurrentResponse('Connection error. Make sure the GROQ_API_KEY environment variable is configured.');
     } finally {
       setIsThinking(false);
     }
   };
 
   const talkToAgent = async (agent: Agent) => {
-    setSelectedAgent(agent);
-    addTerminalLine(`> Directly querying ${agent.name}...`);
+    addTerminalLine(`> Directly querying ${agent.name} with full capabilities...`);
 
     try {
       const res = await fetch('/api/swarm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt: prompt || `Demonstrate your capabilities and tool use as the ${agent.name}.`, 
+          prompt: prompt || `Demonstrate your full capabilities and tool use as the ${agent.name}.`, 
           agentSlug: agent.slug, 
           useSwarm: false 
         }),
@@ -87,32 +87,30 @@ export default function OutsideTheBox() {
       const data = await res.json();
 
       if (data.success) {
-        addTerminalLine(`> ${agent.name} responded with tool use`);
+        if (data.toolCalls && data.toolCalls > 0) {
+          addTerminalLine(`> ${agent.name} used ${data.toolCalls} tools`);
+        }
         setCurrentResponse(data.response);
+        addTerminalLine(`> ${agent.name} completed response`);
       } else {
         addTerminalLine(`> Error from ${agent.name}`);
         setCurrentResponse(data.error || 'Agent error');
       }
     } catch (error) {
       addTerminalLine('> Agent communication failed');
-      setCurrentResponse('Failed to reach agent.');
+      setCurrentResponse('Failed to reach agent. Check server and API key.');
     }
   };
 
   const clearTerminal = () => {
-    setTerminalLines([
-      '> Terminal cleared',
-      '> Swarm still active and ready'
-    ]);
+    setTerminalLines(['> Terminal cleared. The swarm is still fully operational.']);
   };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white overflow-hidden relative">
-      {/* Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(34,255,136,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,255,136,0.07)_1px,transparent_1px)] bg-[size:35px_35px]"></div>
 
       <div className="relative z-10 min-h-screen p-8 flex flex-col">
-        {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-2xl bg-emerald-400 flex items-center justify-center text-black text-4xl leading-none pt-1">⟡</div>
@@ -123,12 +121,11 @@ export default function OutsideTheBox() {
               <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></div>
               <span className="text-emerald-400 font-medium">GROQ POWERED • ALL AGENTS ALIVE</span>
             </div>
-            <div className="text-emerald-400/60 text-xs font-mono">v1000x • FULL TOOL USE ENABLED</div>
+            <div className="text-emerald-400/60 text-xs font-mono">v1000x • SUPER APP WITH REAL TOOL USE</div>
           </div>
         </header>
 
         <div className="max-w-7xl mx-auto flex-1 flex flex-col">
-          {/* Command Center */}
           <div className="glass rounded-3xl p-12 mb-10 border border-emerald-500/20">
             <div className="max-w-2xl">
               <div className="flex items-center gap-3 text-emerald-400 text-sm mb-4">
@@ -143,7 +140,7 @@ export default function OutsideTheBox() {
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={4}
                 className="w-full bg-black border border-white/10 rounded-2xl p-8 text-lg placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none resize-none"
-                placeholder="Be specific. Be ambitious. The agents can read files, edit code, search the web, use specialized skills, generate images, do git operations, and more..."
+                placeholder="Be specific. Be ambitious. The agents read their real .md files and have full tool use (read, write, bash, search, skills, image generation, git, etc.)..."
               />
               
               <div className="flex gap-4 mt-8">
@@ -152,7 +149,7 @@ export default function OutsideTheBox() {
                   disabled={isThinking || !prompt.trim()}
                   className="flex-1 py-6 bg-white hover:bg-emerald-400 text-black font-semibold rounded-2xl text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  {isThinking ? 'SWARM IS WORKING...' : 'LAUNCH SWARM'}
+                  {isThinking ? 'SWARM IS WORKING WITH TOOLS...' : 'LAUNCH SWARM'}
                   <span className="text-xl">→</span>
                 </button>
                 <button 
@@ -166,14 +163,13 @@ export default function OutsideTheBox() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
-            {/* Agents Grid */}
             <div className="lg:col-span-7">
               <div className="flex items-center justify-between mb-6">
                 <div className="text-3xl font-light tracking-tight">The Swarm (9 Agents)</div>
-                <div className="text-xs uppercase tracking-widest px-6 py-3 border border-emerald-400/30 text-emerald-400 rounded-3xl">ALL AGENTS FULLY LOADED FROM .MD FILES</div>
+                <div className="text-xs uppercase tracking-widest px-6 py-3 border border-emerald-400/30 text-emerald-400 rounded-3xl">ALL AGENTS LOADED FROM REAL .MD FILES</div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="agents">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {agents.map((agent) => (
                   <div 
                     key={agent.slug}
@@ -189,7 +185,6 @@ export default function OutsideTheBox() {
               </div>
             </div>
 
-            {/* Terminal */}
             <div className="lg:col-span-5">
               <div className="glass h-full rounded-3xl p-8 flex flex-col">
                 <div className="flex justify-between items-center mb-6">
@@ -204,13 +199,13 @@ export default function OutsideTheBox() {
                   {terminalLines.map((line, i) => (
                     <div key={i} className="mb-1.5">{line}</div>
                   ))}
-                  {isThinking && <div className="text-emerald-400 animate-pulse">Swarm is thinking and using tools...</div>}
+                  {isThinking && <div className="text-emerald-400 animate-pulse">Swarm is using tools and reasoning with all agents...</div>}
                 </div>
 
                 {currentResponse && (
                   <div className="mt-6 pt-6 border-t border-white/10 text-sm">
-                    <div className="text-emerald-400 text-xs mb-2">LATEST RESPONSE</div>
-                    <div className="max-h-32 overflow-auto text-emerald-100 whitespace-pre-wrap text-xs">
+                    <div className="text-emerald-400 text-xs mb-2">SWARM RESPONSE</div>
+                    <div className="max-h-40 overflow-auto text-emerald-100 whitespace-pre-wrap text-xs">
                       {currentResponse}
                     </div>
                   </div>
