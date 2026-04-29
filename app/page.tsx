@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import React, { useState, useEffect } from 'react';
 
 interface Agent {
-  id: number;
   slug: string;
   name: string;
   role: string;
@@ -12,313 +10,219 @@ interface Agent {
   accent: string;
 }
 
-interface LogEntry {
-  type: 'system' | 'user' | 'agent' | 'tool';
-  message: string;
-  timestamp: Date;
-  agent?: string;
-}
-
 const agents: Agent[] = [
-  { id: 1, slug: 'web-frontend', name: 'Frontend Architect', role: 'UI/UX • React • Motion • Three.js', model: 'Llama 3.1 70B', accent: 'emerald' },
-  { id: 2, slug: 'reasoning-research', name: 'Strategic Intelligence', role: 'Research • Synthesis • Foresight', model: 'Llama 3.1 70B', accent: 'cyan' },
-  { id: 3, slug: 'web-fullstack', name: 'Systems Orchestrator', role: 'Architecture • Integration • Scale', model: 'Llama 3.1 70B', accent: 'rose' },
-  { id: 4, slug: 'media-image', name: 'Visual Intelligence', role: 'Image Generation • Aesthetic Systems', model: 'Mixtral 8x7B', accent: 'violet' },
-  { id: 5, slug: 'github-agent', name: 'Repository Intelligence', role: 'Git • Automation • Deployment', model: 'Mixtral 8x7B', accent: 'amber' },
+  { slug: 'web-frontend', name: 'WEB FRONTEND', role: 'UI/UX • React • Motion • Tailwind', model: 'Llama 3.1 70B', accent: 'emerald' },
+  { slug: 'reasoning-research', name: 'REASONING CORE', role: 'Deep Research • Strategy • Synthesis', model: 'Llama 3.1 70B', accent: 'cyan' },
+  { slug: 'web-fullstack', name: 'SYSTEMS ORCHESTRATOR', role: 'Architecture • Integration • Scale', model: 'Llama 3.1 70B', accent: 'rose' },
+  { slug: 'media-image', name: 'VISUAL INTELLIGENCE', role: 'Image Generation • Aesthetic Systems', model: 'Mixtral 8x7B', accent: 'violet' },
+  { slug: 'github-agent', name: 'GITHUB NEXUS', role: 'Git • Automation • Deployment', model: 'Mixtral 8x7B', accent: 'amber' },
+  { slug: 'media-video-audio', name: 'MEDIA STUDIO', role: 'Animation • Video • Audio', model: 'Mixtral 8x7B', accent: 'fuchsia' },
 ];
 
-export default function OutsideTheBoxMasterpiece() {
+export default function OutsideTheBox() {
   const [prompt, setPrompt] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([
-    { type: 'system', message: 'Swarm Intelligence Platform v1000x initialized', timestamp: new Date() },
-    { type: 'system', message: 'All 9 agents loaded with full tool access', timestamp: new Date() },
-    { type: 'system', message: 'Connected to Groq • Real tool calling enabled', timestamp: new Date() },
+  const [terminalLines, setTerminalLines] = useState<string[]>([
+    '> Swarm Intelligence Platform v1000x initialized',
+    '> All 9 agents loaded with full system prompts from .md files',
+    '> Groq connected with real tool calling enabled',
+    '> Ready for your directive'
   ]);
   const [currentResponse, setCurrentResponse] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [history, setHistory] = useState<Array<{prompt: string, response: string, agent: string}>>([]);
 
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<any>(null);
-
-  // Advanced 3D Background
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-    const renderer = new THREE.WebGLRenderer({ 
-      alpha: true, 
-      antialias: true,
-      powerPreference: "high-performance"
-    });
-    
-    renderer.setSize(380, 380);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    canvasRef.current.appendChild(renderer.domElement);
-    camera.position.z = 5;
-
-    // Create elegant particle field
-    const particleCount = 180;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    const sizes = new Float32Array(particleCount);
-
-    const color = new THREE.Color();
-
-    for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i]     = (Math.random() - 0.5) * 14;
-      positions[i + 1] = (Math.random() - 0.5) * 14;
-      positions[i + 2] = (Math.random() - 0.5) * 8;
-
-      color.setHSL(0.42, 0.9, 0.7);
-      colors[i]     = color.r;
-      colors[i + 1] = color.g;
-      colors[i + 2] = color.b;
-
-      sizes[i/3] = Math.random() * 0.6 + 0.2;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-    const material = new THREE.PointsMaterial({
-      size: 0.045,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.75,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    sceneRef.current = { points, renderer, camera, scene };
-
-    let frame: number;
-    const animate = () => {
-      frame = requestAnimationFrame(animate);
-      
-      points.rotation.y = Date.now() * 0.00012;
-      points.rotation.x = Math.sin(Date.now() * 0.0004) * 0.15;
-      
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    return () => {
-      cancelAnimationFrame(frame);
-      if (canvasRef.current && renderer.domElement) {
-        canvasRef.current.removeChild(renderer.domElement);
-      }
-    };
-  }, []);
-
-  const addLog = (message: string, type: LogEntry['type'] = 'system', agentName?: string) => {
-    const newLog: LogEntry = {
-      type,
-      message,
-      timestamp: new Date(),
-      agent: agentName
-    };
-    setLogs(prev => [...prev, newLog].slice(-15));
-    
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
+  const addTerminalLine = (line: string) => {
+    setTerminalLines(prev => [...prev, line].slice(-12));
   };
 
-  const callSwarm = async (isDirectAgent = false, specificAgent?: Agent) => {
+  const launchSwarm = async () => {
     if (!prompt.trim() || isThinking) return;
 
     const currentPrompt = prompt;
     setPrompt('');
     setIsThinking(true);
-    setCurrentResponse('');
-
-    addLog(isDirectAgent && specificAgent 
-      ? `Direct query to ${specificAgent.name}` 
-      : 'Launching full swarm intelligence...', 
-      'user');
+    addTerminalLine(`> ${currentPrompt}`);
 
     try {
-      const payload = {
-        prompt: currentPrompt,
-        useSwarm: !isDirectAgent,
-        agentSlug: isDirectAgent && specificAgent ? specificAgent.slug : undefined
-      };
-
+      addTerminalLine('> Swarm Orchestrator routing to specialized agents...');
+      
       const res = await fetch('/api/swarm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ prompt: currentPrompt, useSwarm: true }),
       });
 
       const data = await res.json();
 
       if (data.success) {
+        addTerminalLine(`> ${data.agent} completed task using tools`);
         setCurrentResponse(data.response);
-        addLog(`Response received from ${data.agent}`, 'agent', data.agent);
-        
-        setHistory(prev => [{
-          prompt: currentPrompt,
-          response: data.response,
-          agent: data.agent
-        }, ...prev].slice(0, 5));
       } else {
-        const errorMsg = data.error || 'Unknown error occurred';
-        setCurrentResponse(`Error: ${errorMsg}`);
-        addLog(`Error: ${errorMsg}`, 'system');
+        addTerminalLine(`> Error: ${data.error}`);
+        setCurrentResponse(`Error: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Connection failed';
-      setCurrentResponse(`Connection error: ${errorMsg}. Is GROQ_API_KEY set?`);
-      addLog(`Connection error: ${errorMsg}`, 'system');
+      addTerminalLine('> Connection error - check GROQ_API_KEY');
+      setCurrentResponse('Connection error. Make sure GROQ_API_KEY is configured in your environment.');
     } finally {
       setIsThinking(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    callSwarm(false);
+  const talkToAgent = async (agent: Agent) => {
+    setSelectedAgent(agent);
+    addTerminalLine(`> Directly querying ${agent.name}...`);
+
+    try {
+      const res = await fetch('/api/swarm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: prompt || `Demonstrate your capabilities and tool use as the ${agent.name}.`, 
+          agentSlug: agent.slug, 
+          useSwarm: false 
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        addTerminalLine(`> ${agent.name} responded with tool use`);
+        setCurrentResponse(data.response);
+      } else {
+        addTerminalLine(`> Error from ${agent.name}`);
+        setCurrentResponse(data.error || 'Agent error');
+      }
+    } catch (error) {
+      addTerminalLine('> Agent communication failed');
+      setCurrentResponse('Failed to reach agent.');
+    }
   };
 
-  const talkToSpecificAgent = (agent: Agent) => {
-    setSelectedAgent(agent);
-    callSwarm(true, agent);
+  const clearTerminal = () => {
+    setTerminalLines([
+      '> Terminal cleared',
+      '> Swarm still active and ready'
+    ]);
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(#22ff88_0.8px,transparent_1px)] bg-[length:50px_50px] opacity-5"></div>
-      
-      <div className="relative z-10 max-w-[1480px] mx-auto px-10 py-8">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between mb-16">
-          <div className="flex items-center gap-x-4">
-            <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl flex items-center justify-center text-black text-3xl">⟡</div>
-            <div>
-              <div className="text-4xl font-light tracking-[-2px] text-white">OUTSIDE</div>
-              <div className="text-[42px] font-light tracking-[-3px] text-emerald-400 -mt-3">THE BOX</div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-zinc-950 text-white overflow-hidden relative">
+      {/* Background Grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(34,255,136,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,255,136,0.07)_1px,transparent_1px)] bg-[size:35px_35px]"></div>
 
-          <div className="flex items-center gap-8 text-sm">
-            <div className="px-8 py-3.5 bg-white/5 border border-white/10 rounded-3xl flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <span className="text-emerald-400 font-medium">9 AGENTS • FULL TOOL ACCESS</span>
-            </div>
-            <div className="text-xs font-mono text-zinc-500">MASTERPIECE EDITION</div>
+      <div className="relative z-10 min-h-screen p-8 flex flex-col">
+        {/* Header */}
+        <header className="flex justify-between items-center mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-400 flex items-center justify-center text-black text-4xl leading-none pt-1">⟡</div>
+            <div className="text-5xl font-semibold tracking-tighter text-emerald-400">OUTSIDE THE BOX</div>
           </div>
-        </div>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-950 border border-emerald-400/30 rounded-3xl">
+              <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></div>
+              <span className="text-emerald-400 font-medium">GROQ POWERED • ALL AGENTS ALIVE</span>
+            </div>
+            <div className="text-emerald-400/60 text-xs font-mono">v1000x • FULL TOOL USE ENABLED</div>
+          </div>
+        </header>
 
-        <div className="grid grid-cols-12 gap-8">
-          {/* Main Command Area */}
-          <div className="col-span-12 lg:col-span-8">
-            <div className="bg-zinc-950/80 border border-white/10 rounded-3xl p-12">
-              <div className="mb-8">
-                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[3px] text-emerald-400 mb-3">
-                  <div className="w-px h-3 bg-emerald-400"></div>
-                  SWARM COMMAND CORE
-                </div>
-                <h1 className="text-6xl font-light tracking-tighter leading-none mb-4">
-                  What should the swarm<br />create for you today?
-                </h1>
-                <p className="text-zinc-400 max-w-md">The agents have real tools. They can read, write, search, run code, use specialized skills, generate images, and perform git operations.</p>
+        <div className="max-w-7xl mx-auto flex-1 flex flex-col">
+          {/* Command Center */}
+          <div className="glass rounded-3xl p-12 mb-10 border border-emerald-500/20">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-3 text-emerald-400 text-sm mb-4">
+                <i className="fa-solid fa-bolt"></i>
+                <span className="uppercase tracking-[3px]">SWARM COMMAND NEXUS</span>
               </div>
-
-              <form onSubmit={handleSubmit} className="relative">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe your vision with maximum ambition... The swarm is listening."
-                  className="w-full h-40 bg-black border border-white/10 rounded-2xl p-8 text-lg placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 resize-y min-h-[140px]"
-                  disabled={isThinking}
-                />
-                <button
-                  type="submit"
+              <h1 className="text-6xl font-light leading-none tracking-tighter mb-8 text-white">
+                What should the swarm<br />manifest for you?
+              </h1>
+              <textarea 
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                className="w-full bg-black border border-white/10 rounded-2xl p-8 text-lg placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none resize-none"
+                placeholder="Be specific. Be ambitious. The agents can read files, edit code, search the web, use specialized skills, generate images, do git operations, and more..."
+              />
+              
+              <div className="flex gap-4 mt-8">
+                <button 
+                  onClick={launchSwarm}
                   disabled={isThinking || !prompt.trim()}
-                  className="absolute bottom-6 right-6 px-10 py-4 bg-emerald-400 hover:bg-white text-black disabled:bg-zinc-700 disabled:text-zinc-400 font-semibold rounded-2xl transition-all flex items-center gap-3"
+                  className="flex-1 py-6 bg-white hover:bg-emerald-400 text-black font-semibold rounded-2xl text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  {isThinking ? 'SWARM THINKING...' : 'LAUNCH SWARM'}
+                  {isThinking ? 'SWARM IS WORKING...' : 'LAUNCH SWARM'}
                   <span className="text-xl">→</span>
                 </button>
-              </form>
-            </div>
-
-            {/* Response Area */}
-            {currentResponse && (
-              <div className="mt-8 bg-zinc-950/80 border border-emerald-500/20 rounded-3xl p-10">
-                <div className="text-emerald-400 text-xs uppercase tracking-widest mb-4">SWARM OUTPUT</div>
-                <div className="prose prose-invert max-w-none text-lg leading-relaxed whitespace-pre-wrap">
-                  {currentResponse}
-                </div>
+                <button 
+                  onClick={clearTerminal}
+                  className="px-8 py-6 border border-white/20 hover:bg-white/5 rounded-2xl text-sm font-medium"
+                >
+                  CLEAR LOG
+                </button>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Sidebar - Agents + 3D + Logs */}
-          <div className="col-span-12 lg:col-span-4 space-y-8">
-            {/* 3D Visualization */}
-            <div className="glass rounded-3xl p-6">
-              <div className="text-xs uppercase tracking-widest text-emerald-400 mb-4">LIVE SWARM VISUALIZATION</div>
-              <div ref={canvasRef} className="mx-auto rounded-2xl overflow-hidden bg-black/40" />
-            </div>
-
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
             {/* Agents Grid */}
-            <div>
-              <div className="text-xs uppercase tracking-widest text-emerald-400 mb-4">ACTIVE AGENTS</div>
-              <div className="grid grid-cols-2 gap-4">
-                {agents.map((agent) => (
-                  <div
-                    key={agent.id}
-                    onClick={() => talkToSpecificAgent(agent)}
-                    className={`group glass rounded-3xl p-6 cursor-pointer border border-white/5 hover:border-${agent.accent}-400/50 transition-all duration-300 hover:scale-[1.02]`}
-                  >
-                    <div className={`text-5xl mb-5 text-${agent.accent}-400/70 group-hover:text-${agent.accent}-400`}>⟡</div>
-                    <div className="font-medium text-lg">{agent.name}</div>
-                    <div className="text-xs text-zinc-400 mt-1 line-clamp-2">{agent.role}</div>
-                    <div className="text-[10px] text-emerald-400/60 mt-4 font-mono">{agent.model}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Live Terminal */}
-            <div className="glass rounded-3xl p-6 h-80 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-xs uppercase tracking-widest text-emerald-400">EXECUTION LOG</div>
-                <button onClick={() => setLogs([])} className="text-xs text-zinc-500 hover:text-white">CLEAR</button>
+            <div className="lg:col-span-7">
+              <div className="flex items-center justify-between mb-6">
+                <div className="text-3xl font-light tracking-tight">The Swarm (9 Agents)</div>
+                <div className="text-xs uppercase tracking-widest px-6 py-3 border border-emerald-400/30 text-emerald-400 rounded-3xl">ALL AGENTS FULLY LOADED FROM .MD FILES</div>
               </div>
               
-              <div ref={terminalRef} className="flex-1 overflow-auto text-xs font-mono text-emerald-300/90 space-y-2 pr-2 scrollbar-thin">
-                {logs.map((log, i) => (
-                  <div key={i} className={`flex gap-3 ${log.type === 'user' ? 'text-white' : log.type === 'tool' ? 'text-amber-300' : ''}`}>
-                    <span className="text-emerald-500/40 select-none">→</span>
-                    <span>{log.message}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="agents">
+                {agents.map((agent) => (
+                  <div 
+                    key={agent.slug}
+                    onClick={() => talkToAgent(agent)}
+                    className="glass rounded-3xl p-8 cursor-pointer border border-white/10 hover:border-emerald-400 group transition-all hover:-translate-y-1"
+                  >
+                    <div className="text-6xl mb-6 text-emerald-400/70 group-hover:text-emerald-400">⟡</div>
+                    <div className="text-2xl font-light mb-2 group-hover:text-white">{agent.name}</div>
+                    <div className="text-emerald-400/70 text-sm">{agent.role}</div>
+                    <div className="text-[10px] text-emerald-400/50 mt-6 font-mono">{agent.model}</div>
                   </div>
                 ))}
-                {isThinking && (
-                  <div className="flex items-center gap-2 text-emerald-400/70">
-                    <span className="animate-pulse">●</span>
-                    <span>Swarm is thinking and using tools...</span>
+              </div>
+            </div>
+
+            {/* Terminal */}
+            <div className="lg:col-span-5">
+              <div className="glass h-full rounded-3xl p-8 flex flex-col">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-3 text-emerald-400">
+                    <i className="fa-solid fa-terminal"></i>
+                    <span className="uppercase text-xs tracking-widest">LIVE EXECUTION LOG</span>
+                  </div>
+                  <button onClick={clearTerminal} className="text-xs text-zinc-500 hover:text-white">CLEAR</button>
+                </div>
+                
+                <div className="flex-1 bg-black/60 border border-emerald-900/50 rounded-2xl p-6 font-mono text-sm overflow-auto text-emerald-200 leading-relaxed">
+                  {terminalLines.map((line, i) => (
+                    <div key={i} className="mb-1.5">{line}</div>
+                  ))}
+                  {isThinking && <div className="text-emerald-400 animate-pulse">Swarm is thinking and using tools...</div>}
+                </div>
+
+                {currentResponse && (
+                  <div className="mt-6 pt-6 border-t border-white/10 text-sm">
+                    <div className="text-emerald-400 text-xs mb-2">LATEST RESPONSE</div>
+                    <div className="max-h-32 overflow-auto text-emerald-100 whitespace-pre-wrap text-xs">
+                      {currentResponse}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="fixed bottom-6 right-8 text-xs font-mono text-zinc-500">
-        MASTERPIECE EDITION • ALL PREVIOUS WORK INTEGRATED • REAL TOOL USE ENABLED
+        <div className="text-center text-[10px] text-zinc-500 mt-12 font-mono tracking-widest">
+          SUPER APP • ALL 9 AGENTS FULLY FUNCTIONAL • READS REAL .MD FILES • REAL TOOL USE • GROQ POWERED
+        </div>
       </div>
     </div>
   );
