@@ -7,6 +7,10 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY,
 });
 
+if (!process.env.GROQ_API_KEY && !process.env.NEXT_PUBLIC_GROQ_API_KEY) {
+  console.error('GROQ_API_KEY is not set in environment variables. The swarm will not work.');
+}
+
 const AGENTS_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), 'agents');
 
 // Define available tools for agents
@@ -193,6 +197,13 @@ async function executeTool(toolCall: any) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!process.env.GROQ_API_KEY && !process.env.NEXT_PUBLIC_GROQ_API_KEY) {
+    return Response.json({ 
+      success: false, 
+      error: "GROQ_API_KEY is not configured. Please add your Groq API key to the environment variables." 
+    }, { status: 400 });
+  }
+
   try {
     const { prompt, agentSlug, useSwarm = true } = await request.json();
 
@@ -212,7 +223,7 @@ export async function POST(request: NextRequest) {
       messages = [
         { 
           role: "system", 
-          content: `${orchestrator.systemPrompt}\n\nYou have access to tools. Use them when needed to solve the user's request. Be thorough and capable.` 
+          content: `${orchestrator.systemPrompt}\n\nYou are the Swarm Orchestrator. You have access to the following tools: read_file, write_file, run_command, web_search, use_skill, generate_image, git_operation.\n\nWhen using use_skill, the skillName must be exactly one of these: "website-building", "presentations", "pdf", "legal-writer", "logo-creator", "replicate", "remotion", "paper-creator". Do not invent skill names. Use "website-building" for any website or web app request.\n\nBe precise with tool calls. Only call tools that are listed. Think step by step before calling tools.` 
         },
         { role: "user", content: prompt }
       ];
@@ -226,7 +237,10 @@ export async function POST(request: NextRequest) {
       }
 
       messages = [
-        { role: "system", content: agent.systemPrompt },
+        { 
+          role: "system", 
+          content: `${agent.systemPrompt}\n\nYou have access to tools including read_file, write_file, run_command, web_search, use_skill, generate_image, git_operation.\nWhen using use_skill, the skillName must be exactly one of: "website-building", "presentations", "pdf", "legal-writer", "logo-creator", "replicate", "remotion", "paper-creator". For any website or web development request, use skillName "website-building". Do not make up skill names. Be precise with tool call format.` 
+        },
         { role: "user", content: prompt }
       ];
       
@@ -246,8 +260,8 @@ export async function POST(request: NextRequest) {
         messages: messages,
         tools: availableTools,
         tool_choice: "auto",
-        temperature: 0.7,
-        max_tokens: 2048,
+        temperature: 0.65,
+        max_tokens: 4096,
       });
 
       const message = completion.choices[0].message;
