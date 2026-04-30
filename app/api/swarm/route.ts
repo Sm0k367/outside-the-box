@@ -132,7 +132,7 @@ async function loadAgent(slug: string) {
       slug,
       name: nameMatch ? nameMatch[1].trim() : slug,
       systemPrompt: systemPrompt || "You are a helpful and capable AI agent with access to tools.",
-      preferredModel: (modelMatch ? modelMatch[1].trim() : "llama3-70b-8192").includes('70b') ? "llama3-70b-8192" : "mixtral-8x7b-32768"
+      preferredModel: (modelMatch ? modelMatch[1].trim() : "llama-3.3-70b-versatile").includes('70b') ? "llama-3.3-70b-versatile" : "mixtral-8x7b-32768"
     };
   } catch (error) {
     console.error(`Failed to load agent ${slug}:`, error);
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
       step++;
       
       const completion = await groq.chat.completions.create({
-        model: "llama3-70b-8192",
+        model: "llama-3.3-70b-versatile",
         messages: messages,
         tools: availableTools,
         tool_choice: "auto",
