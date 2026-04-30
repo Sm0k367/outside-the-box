@@ -7,7 +7,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY,
 });
 
-const AGENTS_DIR = path.join(process.cwd(), 'agents');
+const AGENTS_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), 'agents');
 
 // Define available tools for agents
 const availableTools = [
