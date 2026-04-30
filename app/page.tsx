@@ -22,6 +22,8 @@ const agents: Agent[] = [
 export default function OutsideTheBox() {
   const [prompt, setPrompt] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [mode, setMode] = useState<'swarm' | 'direct'>('swarm');
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [terminalLines, setTerminalLines] = useState([
     '> Swarm Intelligence Platform v1000x initialized',
     '> All 9 agents loaded from their real .md files with full prompts',
@@ -29,6 +31,7 @@ export default function OutsideTheBox() {
     '> The super app is ready. The agents can do anything you ask.'
   ]);
   const [currentResponse, setCurrentResponse] = useState('');
+  const [isResponseVisible, setIsResponseVisible] = useState(false);
 
   const addTerminalLine = (line: string) => {
     setTerminalLines(prev => [...prev, line].slice(-12));
@@ -125,89 +128,128 @@ export default function OutsideTheBox() {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto flex-1 flex flex-col">
-          <div className="glass rounded-3xl p-12 mb-10 border border-emerald-500/20">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-3 text-emerald-400 text-sm mb-4">
-                <i className="fa-solid fa-bolt"></i>
-                <span className="uppercase tracking-[3px]">SWARM COMMAND NEXUS</span>
-              </div>
-              <h1 className="text-6xl font-light leading-none tracking-tighter mb-8 text-white">
-                What should the swarm<br />manifest for you?
-              </h1>
-              <textarea 
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={4}
-                className="w-full bg-black border border-white/10 rounded-2xl p-8 text-lg placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none resize-none"
-                placeholder="Be specific. Be ambitious. The agents read their real .md files and have full tool use (read, write, bash, search, skills, image generation, git, etc.)..."
-              />
-              
-              <div className="flex gap-4 mt-8">
-                <button 
-                  onClick={launchSwarm}
-                  disabled={isThinking || !prompt.trim()}
-                  className="flex-1 py-6 bg-white hover:bg-emerald-400 text-black font-semibold rounded-2xl text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+        {/* Mode Tabs */}
+        <div className="flex gap-2 mb-8 border-b border-white/10 pb-1">
+          <button 
+            onClick={() => { setMode('swarm'); setSelectedAgent(null); }}
+            className={`px-8 py-3 rounded-2xl text-sm font-medium transition-all ${mode === 'swarm' ? 'bg-emerald-400 text-black' : 'bg-white/5 text-zinc-400 hover:bg-white/10'}`}
+          >
+            SWARM MODE (Orchestrator)
+          </button>
+          <button 
+            onClick={() => setMode('direct')}
+            className={`px-8 py-3 rounded-2xl text-sm font-medium transition-all ${mode === 'direct' ? 'bg-emerald-400 text-black' : 'bg-white/5 text-zinc-400 hover:bg-white/10'}`}
+          >
+            DIRECT AGENT MODE
+          </button>
+        </div>
+
+        <div className="max-w-7xl mx-auto flex-1 flex flex-col lg:flex-row gap-8">
+          {/* Left Sidebar - Agents */}
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="text-xs uppercase tracking-widest text-emerald-400 mb-4">AVAILABLE AGENTS</div>
+            <div className="space-y-3">
+              {agents.map((agent) => (
+                <div 
+                  key={agent.slug}
+                  onClick={() => {
+                    setSelectedAgent(agent);
+                    setMode('direct');
+                  }}
+                  className={`glass p-5 rounded-3xl cursor-pointer border transition-all group ${selectedAgent?.slug === agent.slug ? 'border-emerald-400' : 'border-white/10 hover:border-white/30'}`}
                 >
-                  {isThinking ? 'SWARM IS WORKING WITH TOOLS...' : 'LAUNCH SWARM'}
-                  <span className="text-xl">→</span>
-                </button>
-                <button 
-                  onClick={clearTerminal}
-                  className="px-8 py-6 border border-white/20 hover:bg-white/5 rounded-2xl text-sm font-medium"
-                >
-                  CLEAR LOG
-                </button>
-              </div>
+                  <div className="flex items-start gap-4">
+                    <div className={`text-4xl text-${agent.accent}-400/80 group-hover:text-${agent.accent}-400`}>⟡</div>
+                    <div className="flex-1">
+                      <div className="font-medium text-lg text-white group-hover:text-emerald-300">{agent.name}</div>
+                      <div className="text-xs text-emerald-400/70 mt-1">{agent.model}</div>
+                      <div className="text-sm text-zinc-400 mt-3 line-clamp-2">{agent.role}</div>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-emerald-400/50 mt-6 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    ONLINE • FULL TOOL ACCESS
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
-            <div className="lg:col-span-7">
-              <div className="flex items-center justify-between mb-6">
-                <div className="text-3xl font-light tracking-tight">The Swarm (9 Agents)</div>
-                <div className="text-xs uppercase tracking-widest px-6 py-3 border border-emerald-400/30 text-emerald-400 rounded-3xl">ALL AGENTS LOADED FROM REAL .MD FILES</div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {agents.map((agent) => (
-                  <div 
-                    key={agent.slug}
-                    onClick={() => talkToAgent(agent)}
-                    className="glass rounded-3xl p-8 cursor-pointer border border-white/10 hover:border-emerald-400 group transition-all hover:-translate-y-1"
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            <div className="glass rounded-3xl p-12 mb-8 border border-emerald-500/20">
+              <div className="max-w-2xl">
+                <div className="flex items-center gap-3 text-emerald-400 text-sm mb-4">
+                  <i className="fa-solid fa-bolt"></i>
+                  <span className="uppercase tracking-[3px]">
+                    {mode === 'swarm' ? 'SWARM ORCHESTRATOR' : selectedAgent ? selectedAgent.name : 'DIRECT AGENT MODE'}
+                  </span>
+                </div>
+                <h1 className="text-6xl font-light leading-none tracking-tighter mb-8 text-white">
+                  {mode === 'swarm' ? 'What should the swarm manifest for you?' : `Talk directly to ${selectedAgent?.name || 'an agent'}`}
+                </h1>
+                <textarea 
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={4}
+                  className="w-full bg-black border border-white/10 rounded-2xl p-8 text-lg placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none resize-none"
+                  placeholder="Be ambitious. The agents can read files, edit this repo, search the web, generate images, run commands, use skills, and more..."
+                />
+                
+                <div className="flex gap-4 mt-8">
+                  <button 
+                    onClick={launchSwarm}
+                    disabled={isThinking || !prompt.trim()}
+                    className="flex-1 py-6 bg-emerald-400 hover:bg-white text-black font-semibold rounded-2xl text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                   >
-                    <div className="text-6xl mb-6 text-emerald-400/70 group-hover:text-emerald-400">⟡</div>
-                    <div className="text-2xl font-light mb-2 group-hover:text-white">{agent.name}</div>
-                    <div className="text-emerald-400/70 text-sm">{agent.role}</div>
-                    <div className="text-[10px] text-emerald-400/50 mt-6 font-mono">{agent.model}</div>
-                  </div>
-                ))}
+                    {isThinking ? (
+                      <>SWARM IS THINKING &amp; USING TOOLS <span className="animate-pulse">...</span></>
+                    ) : mode === 'swarm' ? 'LAUNCH SWARM' : `TALK TO ${selectedAgent?.name?.toUpperCase() || 'AGENT'}`}
+                    <span className="text-xl">→</span>
+                  </button>
+                  <button 
+                    onClick={clearTerminal}
+                    className="px-8 py-6 border border-white/20 hover:bg-white/5 rounded-2xl text-sm font-medium"
+                  >
+                    CLEAR LOG
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="lg:col-span-5">
-              <div className="glass h-full rounded-3xl p-8 flex flex-col">
+            {/* Response Area */}
+            {currentResponse && (
+              <div className="glass rounded-3xl p-10 mb-8 border border-emerald-500/30">
                 <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center gap-3 text-emerald-400">
-                    <i className="fa-solid fa-terminal"></i>
-                    <span className="uppercase text-xs tracking-widest">LIVE EXECUTION LOG</span>
-                  </div>
-                  <button onClick={clearTerminal} className="text-xs text-zinc-500 hover:text-white">CLEAR</button>
+                  <div className="text-emerald-400 text-xs uppercase tracking-widest">SWARM RESPONSE</div>
+                  <button onClick={() => navigator.clipboard.writeText(currentResponse)} className="text-xs text-emerald-400 hover:text-white">COPY</button>
                 </div>
-                
-                <div className="flex-1 bg-black/60 border border-emerald-900/50 rounded-2xl p-6 font-mono text-sm overflow-auto text-emerald-200 leading-relaxed">
-                  {terminalLines.map((line, i) => (
-                    <div key={i} className="mb-1.5">{line}</div>
-                  ))}
-                  {isThinking && <div className="text-emerald-400 animate-pulse">Swarm is using tools and reasoning with all agents...</div>}
+                <div className="prose prose-invert max-w-none text-[15px] leading-relaxed whitespace-pre-wrap text-emerald-100">
+                  {currentResponse}
                 </div>
+              </div>
+            )}
 
-                {currentResponse && (
-                  <div className="mt-6 pt-6 border-t border-white/10 text-sm">
-                    <div className="text-emerald-400 text-xs mb-2">SWARM RESPONSE</div>
-                    <div className="max-h-40 overflow-auto text-emerald-100 whitespace-pre-wrap text-xs">
-                      {currentResponse}
-                    </div>
+            {/* Live Terminal */}
+            <div className="glass flex-1 rounded-3xl p-8 flex flex-col min-h-[340px]">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3 text-emerald-400">
+                  <i className="fa-solid fa-terminal"></i>
+                  <span className="uppercase text-xs tracking-widest">LIVE EXECUTION LOG</span>
+                </div>
+                <button onClick={clearTerminal} className="text-xs text-zinc-500 hover:text-white">CLEAR</button>
+              </div>
+              
+              <div className="flex-1 bg-black/70 border border-emerald-900/70 rounded-2xl p-6 font-mono text-sm overflow-auto text-emerald-200 leading-relaxed">
+                {terminalLines.map((line, i) => (
+                  <div key={i} className={`mb-2 ${line.includes('Used') || line.includes('tool') ? 'text-amber-300' : line.includes('Error') ? 'text-red-400' : ''}`}>
+                    {line}
+                  </div>
+                ))}
+                {isThinking && (
+                  <div className="flex items-center gap-3 text-emerald-400">
+                    <span className="animate-pulse">⟡</span>
+                    <span>Swarm is thinking and using tools across agents...</span>
                   </div>
                 )}
               </div>
